@@ -23,8 +23,6 @@ COPY composer.json composer.lock package.json package-lock.json ./
 # Copy .env
 COPY .env .env
 
-# Copy certificate
-COPY storage/certs/isrgrootx1.pem storage/certs/isrgrootx1.pem
 
 # Copy source code
 COPY . .
