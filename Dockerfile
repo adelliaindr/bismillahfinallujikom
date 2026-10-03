@@ -1,62 +1,35 @@
-# Gunakan PHP 8.2
 FROM php:8.2-cli
 
 RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    curl \
-    libzip-dev \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev
+    git unzip curl libzip-dev libpng-dev libonig-dev libxml2-dev \
+    && docker-php-ext-install pdo_mysql \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js LTS
+# Node.js LTS
 RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
     && apt-get install -y nodejs
 
-# Set working directory
+# Composer
+RUN curl -sS https://getcomposer.org/installer | php -- \
+    --install-dir=/usr/local/bin --filename=composer
+
 WORKDIR /app
 
-# Copy file dependency
-COPY composer.json composer.lock package.json package-lock.json ./
-
-# Copy .env
-COPY .env .env
-
-# Unduh sertifikat SSL Let's Encrypt secara otomatis (DITARUH DI SINI)
+# Sertifikat Let's Encrypt
 RUN mkdir -p storage/certs && \
     curl -fsSL https://letsencrypt.org/certs/isrgrootx1.pem -o storage/certs/isrgrootx1.pem
-    
 
-# Copy source code
+# Source code
 COPY . .
 
-# Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- \
-    --install-dir=/usr/local/bin \
-    --filename=composer
-
-# Install dependency Laravel
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+RUN npm install && npm run build
 
-# Install dependency Node.js
-RUN npm install
-
-# Build frontend
-RUN npm run build
-
-# Install PDO MySQL
-RUN docker-php-ext-install pdo_mysql
-
-# Permission Laravel
 RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# Buat storage link
 RUN php artisan storage:link
 
-# Port aplikasi
 EXPOSE 8002
 
-# Jalankan Laravel
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8002"]
+CMD ["sh", "-c", "php artisan serve --host=0.0.0.0 --port=${PORT:-8002}"]
