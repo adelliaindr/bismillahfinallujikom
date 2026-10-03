@@ -23,6 +23,12 @@ COPY composer.json composer.lock package.json package-lock.json ./
 # Copy .env
 COPY .env .env
 
+# Unduh sertifikat SSL Let's Encrypt secara otomatis (DITARUH DI SINI)
+RUN mkdir -p storage/certs && \
+    curl -fsSL https://letsencrypt.org/certs/isrgrootx1.pem -o storage/certs/isrgrootx1.pem
+
+# # Copy certificate
+# COPY storage/certs/isrgrootx1.pem storage/certs/isrgrootx1.pem
 
 # Copy source code
 COPY . .
